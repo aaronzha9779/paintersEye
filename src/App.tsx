@@ -12,36 +12,6 @@ const BEST_SCORE_50_KEY = "painters-eye-best-score-50";
 const COUNTDOWN_STEPS = ["READY", "SET", "GO"] as const;
 const [countdownIndex, setCountdownIndex] = useState<number>(0);
 
-useEffect(() => {
-  if (phase !== "countdown") return;
-
-  setCountdownIndex(0);
-
-  const timeouts: number[] = [];
-
-  COUNTDOWN_STEPS.forEach((_, index) => {
-    const timeout = window.setTimeout(() => {
-      setCountdownIndex(index);
-    }, index * 700);
-    timeouts.push(timeout);
-  });
-
-  const finishTimeout = window.setTimeout(() => {
-    setPhase("preview");
-  }, COUNTDOWN_STEPS.length * 700);
-
-  timeouts.push(finishTimeout);
-
-  return () => timeouts.forEach((id) => window.clearTimeout(id));
-}, [phase, currentRound]);
-
-function startNextRound() {
-  setTargetValue(randomGray());
-  setSliderValue(0);
-  setDifference(null);
-  setPreviewMsLeft(previewDurationMs);
-  setPhase("countdown");
-}
 
 function randomGray(): number {
   return Math.floor(Math.random() * 256);
@@ -98,6 +68,31 @@ function App() {
   const [scorePulse, setScorePulse] = useState<boolean>(false);
 
   const previewDurationMs = difficulty === "hard" ? HARD_PREVIEW_MS : EASY_PREVIEW_MS;
+
+
+useEffect(() => {
+  if (phase !== "countdown") return;
+
+  setCountdownIndex(0);
+
+  const timeouts: number[] = [];
+
+  COUNTDOWN_STEPS.forEach((_, index) => {
+    const timeout = window.setTimeout(() => {
+      setCountdownIndex(index);
+    }, index * 700);
+    timeouts.push(timeout);
+  });
+
+  const finishTimeout = window.setTimeout(() => {
+    setPhase("preview");
+  }, COUNTDOWN_STEPS.length * 700);
+
+  timeouts.push(finishTimeout);
+
+  return () => timeouts.forEach((id) => window.clearTimeout(id));
+}, [phase, currentRound]);
+
 
   useEffect(() => {
     if (phase !== "preview") return;
@@ -171,7 +166,8 @@ function App() {
     setTargetValue(randomGray());
     setSliderValue(0);
     setDifference(null);
-    setPhase("preview");
+    setPreviewMsLeft(previewDurationMs);
+    setPhase("countdown");
   }
 
   function handleStartGame() {
