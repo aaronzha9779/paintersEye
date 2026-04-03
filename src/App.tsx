@@ -1,13 +1,47 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-type Phase = "idle" | "preview" | "guess" | "result";
+type Phase = "idle" | "countdown" | "preview" | "guess" | "result";
 type Difficulty = "easy" | "hard";
 
 const EASY_PREVIEW_MS = 5000;
 const HARD_PREVIEW_MS = 2000;
 const TOTAL_ROUNDS = 5;
 const BEST_SCORE_50_KEY = "painters-eye-best-score-50";
+
+const COUNTDOWN_STEPS = ["READY", "SET", "GO"] as const;
+const [countdownIndex, setCountdownIndex] = useState<number>(0);
+
+useEffect(() => {
+  if (phase !== "countdown") return;
+
+  setCountdownIndex(0);
+
+  const timeouts: number[] = [];
+
+  COUNTDOWN_STEPS.forEach((_, index) => {
+    const timeout = window.setTimeout(() => {
+      setCountdownIndex(index);
+    }, index * 700);
+    timeouts.push(timeout);
+  });
+
+  const finishTimeout = window.setTimeout(() => {
+    setPhase("preview");
+  }, COUNTDOWN_STEPS.length * 700);
+
+  timeouts.push(finishTimeout);
+
+  return () => timeouts.forEach((id) => window.clearTimeout(id));
+}, [phase, currentRound]);
+
+function startNextRound() {
+  setTargetValue(randomGray());
+  setSliderValue(0);
+  setDifference(null);
+  setPreviewMsLeft(previewDurationMs);
+  setPhase("countdown");
+}
 
 function randomGray(): number {
   return Math.floor(Math.random() * 256);
@@ -219,7 +253,13 @@ function App() {
             </svg>
           </button>
         </div>
-
+    {phase === "countdown" && (
+      <div className="countdown-screen">
+        <div key={countdownIndex} className="countdown-word">
+           {COUNTDOWN_STEPS[countdownIndex]}
+         </div>
+        </div>
+   )}
         {phase === "idle" && (
           <div className="controls home-controls">
             <p className="status">Click play to begin a 5-round session.</p>
