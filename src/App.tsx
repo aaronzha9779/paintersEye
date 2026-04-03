@@ -56,14 +56,6 @@ function calculateRoundScore(diff: number): number {
   return Number(harshScore.toFixed(2));
 }
 
-function getAccuracyLabel(diff: number): string {
-  if (diff <= 2) return "Perfect";
-  if (diff <= 5) return "Excellent";
-  if (diff <= 10) return "Great";
-  if (diff <= 18) return "Good";
-  if (diff <= 30) return "Ok";
-  return "Miss";
-}
 
 function App() {
   const [targetValue, setTargetValue] = useState<number>(randomGray());
