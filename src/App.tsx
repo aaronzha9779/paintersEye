@@ -9,9 +9,6 @@ const HARD_PREVIEW_MS = 2000;
 const TOTAL_ROUNDS = 5;
 const BEST_SCORE_50_KEY = "painters-eye-best-score-50";
 
-const COUNTDOWN_STEPS = ["READY", "SET", "GO"] as const;
-const [countdownIndex, setCountdownIndex] = useState<number>(0);
-
 
 function randomGray(): number {
   return Math.floor(Math.random() * 256);
@@ -49,6 +46,25 @@ function useRollingNumber(target: number, shouldAnimate: boolean, duration = 750
   return value;
 }
 
+function randomCountdownValues(): [number, number, number] {
+  return [randomGray(), randomGray(), randomGray()];
+}
+
+function calculateRoundScore(diff: number): number {
+  const normalized = diff / 255;
+  const harshScore = Math.max(0, 10 * Math.pow(1 - normalized, 2.2));
+  return Number(harshScore.toFixed(2));
+}
+
+function getAccuracyLabel(diff: number): string {
+  if (diff <= 2) return "Perfect";
+  if (diff <= 5) return "Excellent";
+  if (diff <= 10) return "Great";
+  if (diff <= 18) return "Good";
+  if (diff <= 30) return "Ok";
+  return "Miss";
+}
+
 function App() {
   const [targetValue, setTargetValue] = useState<number>(randomGray());
   const [sliderValue, setSliderValue] = useState<number>(0);
@@ -59,12 +75,22 @@ function App() {
   const [difference, setDifference] = useState<number | null>(null);
   const [previewMsLeft, setPreviewMsLeft] = useState<number>(EASY_PREVIEW_MS);
   const [currentRound, setCurrentRound] = useState<number>(1);
+  const previewCounterTextColor = targetValue >= 128 ? "#1a1a1a" : "#f5f5f5";
+
+const COUNTDOWN_STEPS = ["READY", "SET", "GO"] as const;
+const [countdownIndex, setCountdownIndex] = useState<number>(0);
+const [countdownValues, setCountdownValues] = useState<[number, number, number]>(
+  randomCountdownValues()
+);
+
   const [roundScores, setRoundScores] = useState<number[]>([]);
   const [bestScoreOutOf50, setBestScoreOutOf50] = useState<number>(() => {
     const saved = window.localStorage.getItem(BEST_SCORE_50_KEY);
     const parsed = Number(saved);
     return Number.isFinite(parsed) ? parsed : 0;
   });
+  const countdownValue = countdownValues[countdownIndex] ?? 0;
+const countdownTextColor = countdownValue >= 140 ? "#111111" : "#f5f5f5";
   const [scorePulse, setScorePulse] = useState<boolean>(false);
 
   const previewDurationMs = difficulty === "hard" ? HARD_PREVIEW_MS : EASY_PREVIEW_MS;
@@ -94,6 +120,7 @@ useEffect(() => {
 }, [phase, currentRound]);
 
 
+
   useEffect(() => {
     if (phase !== "preview") return;
 
@@ -115,7 +142,7 @@ useEffect(() => {
 
   const roundScoreOutOf10 = useMemo(() => {
     if (difference === null) return null;
-    return ((255 - difference) / 255) * 10;
+    return calculateRoundScore(difference ?? 0);
   }, [difference]);
 
   const averageScoreOutOf10 = useMemo(() => {
@@ -129,7 +156,12 @@ useEffect(() => {
     return roundScores.reduce((total, roundScore) => total + roundScore, 0);
   }, [roundScores]);
 
-  const countdownCenti = Math.ceil(previewMsLeft / 10);
+  const previewCountdownDisplay = Math.max(
+    0,
+    Math.ceil(((previewMsLeft / previewDurationMs) * 500) / 10) * 10
+  );
+  const timerText = String(previewCountdownDisplay).padStart(3, "0");
+
   const isFinalRound = currentRound === TOTAL_ROUNDS;
   const isSessionComplete = roundScores.length === TOTAL_ROUNDS;
   const hasStarted = phase !== "idle" || roundScores.length > 0;
@@ -155,7 +187,7 @@ useEffect(() => {
     if (phase !== "guess") return;
 
     const diff = Math.abs(targetValue - sliderValue);
-    const roundScore = ((255 - diff) / 255) * 10;
+    const roundScore = calculateRoundScore(diff);
 
     setDifference(diff);
     setRoundScores((previous) => [...previous, roundScore]);
@@ -167,6 +199,7 @@ useEffect(() => {
     setSliderValue(0);
     setDifference(null);
     setPreviewMsLeft(previewDurationMs);
+    setCountdownValues(randomCountdownValues());
     setPhase("countdown");
   }
 
@@ -211,6 +244,17 @@ useEffect(() => {
     window.localStorage.setItem(BEST_SCORE_50_KEY, String(finalScoreOutOf50));
   }, [isSessionComplete, finalScoreOutOf50, bestScoreOutOf50]);
 
+
+  const [timerTicking, setTimerTicking] = useState(false);
+
+  useEffect(() => {
+    if (phase !== "preview") return;
+    setTimerTicking(true);
+    const timeout = window.setTimeout(() => setTimerTicking(false), 90);
+    return () => window.clearTimeout(timeout);
+  }, [previewCountdownDisplay, phase]);
+
+
   return (
     <main className={`app ${backgroundMode === "black" ? "bg-black" : "bg-white"}`}>
       <section className={`card ${isFadingIn ? "card-fade-in" : ""} ${phase === "idle" ? "phase-idle" : ""}`}>
@@ -249,13 +293,20 @@ useEffect(() => {
             </svg>
           </button>
         </div>
-    {phase === "countdown" && (
-      <div className="countdown-screen">
-        <div key={countdownIndex} className="countdown-word">
-           {COUNTDOWN_STEPS[countdownIndex]}
-         </div>
+        {phase === "countdown" && (
+        <div
+          className="countdown-screen"
+          style={{ backgroundColor: toGray(countdownValue) }}
+        >
+          <div
+            key={countdownIndex}
+            className="countdown-word"
+            style={{ color: countdownTextColor }}
+          >
+            {COUNTDOWN_STEPS[countdownIndex]}
+          </div>
         </div>
-   )}
+      )}
         {phase === "idle" && (
           <div className="controls home-controls">
             <p className="status">Click play to begin a 5-round session.</p>
@@ -284,6 +335,7 @@ useEffect(() => {
           </div>
         )}
 
+
         {phase === "preview" && (
           <>
             <p className="status">Memorize this value</p>
@@ -293,8 +345,14 @@ useEffect(() => {
                 style={{ backgroundColor: toGray(targetValue) }}
                 aria-label="Reference value"
               >
-                <div key={countdownCenti} className="square-counter counter-pop">
-                  {countdownCenti}
+               <div
+                  className="square-counter"
+                  aria-label={`Timer ${timerText}`}
+                  style={{ color: previewCounterTextColor }}
+                >
+                  <span className={`timer-full ${timerTicking ? "timer-tick" : ""}`}>
+                    {timerText}
+                  </span>
                 </div>
               </div>
             </div>
