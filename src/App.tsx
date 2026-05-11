@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-type Phase = "idle" | "countdown" | "preview" | "guess" | "result";
+type Phase = "idle" | "countdown" | "preview" | "guess" | "result" | "final";
 type Difficulty = "easy" | "hard" | "brutal";
 
 const EASY_PREVIEW_MS = 5000;
@@ -274,9 +274,14 @@ useEffect(() => {
   }
 
   function handleNextRound() {
-    if (isFinalRound) return;
-    setCurrentRound((value) => value + 1);
-    startNextRound();
+    if (isFinalRound){
+      setPhase("final");
+      return;
+    }
+
+
+      setCurrentRound((value) => value + 1); 
+      startNextRound();
   }
 
   function handlePlayAgain() {
@@ -305,6 +310,10 @@ useEffect(() => {
 
 
   const [timerTicking, setTimerTicking] = useState(false);
+  const rollingFinalScore = useRollingNumber(
+    finalScoreOutOf50,
+    phase === "final"
+  );
 
   useEffect(() => {
     if (phase !== "preview") return;
@@ -502,19 +511,20 @@ useEffect(() => {
       <span className="result-label">Original:</span>
       {isSessionComplete ? (
         <div className="result-end-actions">
-            <button
-                className="icon-action-button"
-                onClick={handlePlayAgain}
-                aria-label="Play again"
-                title="Play again"
-              >
-                <svg viewBox="0 0 64 64" aria-hidden="true">
-                  <path d="M48 24a18 18 0 1 0 2 16" />
-                  <path d="M48 24V12" />
-                  <path d="M48 24H36" />
-                </svg>
-              </button>
-          <button onClick={handleBackToMenu}>Back to Menu</button>
+          <button
+            className="arrow-button arrow-inside"
+            onMouseEnter={playHover}
+            onClick={() => {
+              playClick();
+              handleNextRound();
+            }}
+            aria-label="Next"
+          >
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M12 32h34" />
+              <path d="M36 18l14 14-14 14" />
+            </svg>
+          </button>
         </div>
       ) : (
         <button
@@ -536,7 +546,48 @@ useEffect(() => {
       )}
     </div>
   </div>
+  )}
+      {phase === "final" && (
+        <div className="final-screen">
+          <p className="final-label">Final Score</p>
+
+          <div className="final-score">
+            {rollingFinalScore.toFixed(2)}
+            <span>/50</span>
+          </div>
+
+          <div className="final-actions">
+            <button
+              className="icon-action-button"
+              onMouseEnter={playHover}
+              onClick={() => {
+                playClick();
+                handlePlayAgain();
+              }}
+              aria-label="Play again"
+              title="Play again"
+            >
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M48 24a18 18 0 1 0 2 16" />
+                <path d="M48 24V12" />
+                <path d="M48 24H36" />
+              </svg>
+            </button>
+
+      <button
+        onMouseEnter={playHover}
+        onClick={() => {
+          playClick();
+          handleBackToMenu();
+        }}
+      >
+        Menu
+      </button>
+    </div>
+  </div>
 )}
+
+
 </section>
 <button
             className="floating-bg-toggle"
