@@ -73,19 +73,19 @@ function App() {
   
   const stopwatchSound = useMemo(() => {
     const audio = new Audio("/sounds/timer.MP3");
-    audio.volume = 0.22;
+    audio.volume = 0.5;
     return audio;
   }, []);
 
   const stopwatchHardSound = useMemo(() => {
     const audio = new Audio("/sounds/hardM.MP3");
-    audio.volume = 0.22;
+    audio.volume = 0.5;
     return audio;
   }, []);
 
   const stopwatchBrutalSound = useMemo(() => {
     const audio = new Audio("/sounds/Danger.MP3");
-    audio.volume = 0.22;
+    audio.volume = 0.5;
     return audio;
   }, []);
 
