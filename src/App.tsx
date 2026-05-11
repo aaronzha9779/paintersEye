@@ -11,14 +11,6 @@ const TOTAL_ROUNDS = 5;
 const BEST_SCORE_50_KEY = "painters-eye-best-score-50";
 
 
-function playSound(src: string, volume = 0.35) {
-  const audio = new Audio(src);
-  audio.volume = volume;
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
-}
-
-
 function randomGray(): number {
   return Math.floor(Math.random() * 256);
 }
@@ -150,7 +142,6 @@ const [countdownValues, setCountdownValues] = useState<[number, number, number]>
   });
   const countdownValue = countdownValues[countdownIndex] ?? 0;
 const countdownTextColor = countdownValue >= 140 ? "#111111" : "#f5f5f5";
-  const [scorePulse, setScorePulse] = useState<boolean>(false);
 
   const previewDurationMs =
   difficulty === "easy"
@@ -219,12 +210,6 @@ useEffect(() => {
     return calculateRoundScore(difference ?? 0);
   }, [difference]);
 
-  const averageScoreOutOf10 = useMemo(() => {
-    if (roundScores.length === 0) return 0;
-    const total = roundScores.reduce((sum, value) => sum + value, 0);
-    return total / roundScores.length;
-  }, [roundScores]);
-
   const finalScoreOutOf50 = useMemo(() => {
     if (roundScores.length === 0) return 0;
     return roundScores.reduce((total, roundScore) => total + roundScore, 0);
@@ -239,14 +224,6 @@ useEffect(() => {
   const isSessionComplete = roundScores.length === TOTAL_ROUNDS;
   const hasStarted = phase !== "idle" || roundScores.length > 0;
   const rollingRoundScore = useRollingNumber(roundScoreOutOf10 ?? 0, phase === "result");
-  const rollingAverage = useRollingNumber(
-    averageScoreOutOf10,
-    phase === "result" && isSessionComplete
-  );
-  const rollingAccuracy = useRollingNumber(
-    finalScoreOutOf50,
-    phase === "result" && isSessionComplete
-  );
   const guessScoreTextColor = sliderValue >= 140 ? "#111111" : "#f5f5f5";
 
   
@@ -257,10 +234,8 @@ useEffect(() => {
       playScore();
     }, 120);
   
-    setScorePulse(true);
   
     const timeout = window.setTimeout(() => {
-      setScorePulse(false);
     }, 600);
   
     return () => {
@@ -310,11 +285,6 @@ useEffect(() => {
     setCurrentRound(1);
     setRoundScores([]);
     startNextRound();
-  }
-
-  function handleToggleDifficulty() {
-    setDifficulty((mode) => (mode === "easy" ? "hard" : "easy"));
-    playClick();
   }
 
 
