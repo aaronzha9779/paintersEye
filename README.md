@@ -2,7 +2,7 @@
 
 > A browser-based training game for artists to improve grayscale value recognition.
 
-**[Play](https://painters-eye.vercel.app/)** · **[Source Code](https://github.com/aaronzha9779/paintersEye)**
+**[Play](https://painters-eye.vercel.app/)** 
 
 ## Overview
 
