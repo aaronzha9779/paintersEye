@@ -4,9 +4,6 @@ dist
 .DS_Store
 .env
 
-
-node_modules/
-dist/
 *.tsbuildinfo
 
 .env.*
@@ -20,3 +17,8 @@ dist/
 *.key
 credentials.json
 secrets.json
+
+
+# IDE
+.vscode/
+.idea/
